@@ -338,12 +338,12 @@
       </div>
 
       <div class="field">
-        <label for="fNamaKetua">Nama Ketua</label>
+        <label for="fNamaKetua">General Manager HCC</label>
         <input type="text" id="fNamaKetua" placeholder="Nama lengkap ketua" maxlength="60" />
       </div>
 
       <div class="field">
-        <label>Tanda Tangan Ketua</label>
+        <label>Tanda Tangan GM HCC</label>
         <div class="upload-row">
           <div class="thumb empty" id="ttdThumb"><button type="button" class="x" id="ttdRemove">✕</button></div>
           <label class="upload-btn">
@@ -684,24 +684,20 @@
   }
 
   function drawLogoImage(ctx, img, cx, cy, box, color){
-    const half = box/2;
-    roundedRectPath(ctx, cx-half, cy-half, box, box, 14);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fill();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-    const pad = box*0.12;
-    const availW = box - pad*2, availH = box - pad*2;
-    const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
-    const scale = Math.min(availW/iw, availH/ih);
-    const dw = iw*scale, dh = ih*scale;
-    ctx.save();
-    roundedRectPath(ctx, cx-half, cy-half, box, box, 14);
-    ctx.clip();
-    ctx.drawImage(img, cx-dw/2, cy-dh/2, dw, dh);
-    ctx.restore();
-  }
+  const half = box/2;
+  const pad = box*0.05;
+  const availW = box - pad*2;
+  const availH = box - pad*2;
+
+  const iw = img.naturalWidth || img.width;
+  const ih = img.naturalHeight || img.height;
+
+  const scale = Math.min(availW/iw, availH/ih);
+  const dw = iw*scale;
+  const dh = ih*scale;
+
+  ctx.drawImage(img, cx-dw/2, cy-dh/2, dw, dh);
+}
 
   function drawSwash(ctx, cx, y, width, color){
     ctx.save();
@@ -826,10 +822,10 @@
 
     ctx.font = '700 28px "Playfair Display", serif';
     ctx.fillStyle = theme.ink;
-    ctx.fillText(els.namaKetua.value || 'Nama Ketua', W/2, sigY+46);
+    ctx.fillText(els.namaKetua.value || 'Nama GM HCC', W/2, sigY+46);
     ctx.font = 'italic 400 22px "Cormorant Garamond", serif';
     ctx.fillStyle = theme.sub;
-    ctx.fillText('Ketua', W/2, sigY+74);
+    ctx.fillText('General Manager HCC', W/2, sigY+74);
   }
 
   // ---------- wiring ----------
