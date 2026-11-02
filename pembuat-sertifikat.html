@@ -1,0 +1,1093 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pembuat Sertifikat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Alex+Brush&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root{
+    --bg:#14151b;
+    --bg-2:#1a1c23;
+    --panel:#1c1f27;
+    --panel-2:#20232c;
+    --line:#2b2e38;
+    --ink:#ece9e1;
+    --ink-dim:#a3a3a0;
+    --gold:#c9a227;
+    --gold-bright:#e2bd45;
+    --rose:#b4525a;
+    --radius:10px;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background:
+      radial-gradient(1100px 560px at 15% -10%, rgba(201,162,39,0.08), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(201,162,39,0.05), transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:"Work Sans", ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .shell{ max-width:1320px; margin:0 auto; padding:28px 20px 60px; }
+
+  header.top{ margin-bottom:26px; }
+  header.top .eyebrow{
+    font-family:"Cormorant Garamond", serif;
+    font-style:italic;
+    color:var(--gold);
+    font-size:17px;
+    margin:0 0 6px;
+    letter-spacing:.2px;
+  }
+  header.top h1{
+    font-family:"Playfair Display", serif;
+    font-weight:700;
+    font-size:clamp(26px,4vw,38px);
+    margin:0 0 8px;
+    letter-spacing:.2px;
+  }
+  header.top p{
+    margin:0;
+    max-width:640px;
+    color:var(--ink-dim);
+    font-size:15px;
+    line-height:1.55;
+  }
+
+  .layout{
+    display:grid;
+    grid-template-columns:380px 1fr;
+    gap:22px;
+    align-items:start;
+  }
+  @media (max-width: 880px){
+    .layout{ grid-template-columns:1fr; }
+  }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px;
+  }
+
+  .field{ margin-bottom:18px; }
+  .field label{
+    display:block;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-dim);
+    margin-bottom:7px;
+  }
+  .field input[type="text"],
+  .field textarea{
+    width:100%;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:8px;
+    color:var(--ink);
+    font-family:"Work Sans", sans-serif;
+    font-size:14.5px;
+    padding:10px 12px;
+    resize:vertical;
+    transition:border-color .15s ease;
+  }
+  .field textarea{ min-height:92px; line-height:1.5; }
+  .field input[type="text"]:focus,
+  .field textarea:focus{
+    outline:none;
+    border-color:var(--gold);
+  }
+  .field .hint{ font-size:12px; color:#787873; margin-top:5px; }
+
+  input[type="range"]{
+    -webkit-appearance:none;
+    appearance:none;
+    height:4px;
+    border-radius:999px;
+    background:var(--line);
+    outline:none;
+    margin-top:4px;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:16px; height:16px;
+    border-radius:50%;
+    background:var(--gold);
+    cursor:pointer;
+    border:2px solid #1a1408;
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:16px; height:16px;
+    border-radius:50%;
+    background:var(--gold);
+    cursor:pointer;
+    border:2px solid #1a1408;
+  }
+
+  .bulk-box{
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:14px;
+  }
+  .bulk-box textarea{
+    width:100%;
+    background:var(--bg-2);
+    border:1px solid var(--line);
+    border-radius:8px;
+    color:var(--ink);
+    font-family:"Work Sans", sans-serif;
+    font-size:13px;
+    padding:10px 12px;
+    min-height:110px;
+    line-height:1.5;
+    resize:vertical;
+  }
+  .bulk-box textarea:focus{ outline:none; border-color:var(--gold); }
+  .bulk-meta{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top:8px; margin-bottom:10px;
+    font-size:12px; color:var(--ink-dim);
+  }
+  .bulk-meta strong{ color:var(--gold); }
+  .bulk-actions{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .bulk-actions .btn-ghost{ padding:8px 12px; font-size:12.5px; }
+  .bulk-actions label.btn-ghost{ display:inline-flex; align-items:center; cursor:pointer; }
+  .bulk-actions input[type="file"]{ display:none; }
+
+  .progress-wrap{ display:none; margin-top:12px; }
+  .progress-wrap.active{ display:block; }
+  .progress-track{
+    width:100%; height:8px; border-radius:999px;
+    background:var(--bg-2); overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .progress-fill{
+    height:100%; width:0%;
+    background:linear-gradient(90deg, var(--gold), var(--gold-bright));
+    transition:width .15s ease;
+  }
+  .progress-label{
+    font-size:12px; color:var(--ink-dim); margin-top:6px;
+    display:flex; justify-content:space-between;
+  }
+
+  .section-title{
+    font-size:11.5px;
+    text-transform:none;
+    color:var(--gold);
+    font-weight:700;
+    margin:26px 0 12px;
+    padding-top:16px;
+    border-top:1px solid var(--line);
+    letter-spacing:.2px;
+  }
+  .section-title:first-of-type{ margin-top:0; padding-top:0; border-top:none; }
+
+  .theme-row{ display:flex; gap:10px; flex-wrap:wrap; }
+  .theme-pill{
+    display:flex; align-items:center; gap:8px;
+    padding:8px 12px 8px 8px;
+    border:1px solid var(--line);
+    border-radius:999px;
+    cursor:pointer;
+    font-size:13px;
+    color:var(--ink-dim);
+    background:var(--panel-2);
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .theme-pill input{ display:none; }
+  .theme-pill .swatch{
+    width:20px; height:20px; border-radius:50%;
+    border:2px solid rgba(255,255,255,0.15);
+  }
+  .theme-pill.active{ border-color:var(--gold); color:var(--ink); }
+
+  .upload-row{
+    display:flex; align-items:center; gap:12px;
+  }
+  .upload-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    background:var(--panel-2);
+    border:1px dashed var(--line);
+    color:var(--ink-dim);
+    border-radius:8px;
+    padding:10px 14px;
+    font-size:13px;
+    cursor:pointer;
+    flex:1;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .upload-btn:hover{ border-color:var(--gold); color:var(--ink); }
+  .upload-btn input{ display:none; }
+  .thumb{
+    width:44px; height:44px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--panel-2) center/contain no-repeat;
+    flex-shrink:0;
+    position:relative;
+  }
+  .thumb.empty{ opacity:.35; }
+  .thumb .x{
+    position:absolute; top:-7px; right:-7px;
+    width:18px; height:18px; border-radius:50%;
+    background:var(--rose); color:#fff;
+    font-size:11px; line-height:18px; text-align:center;
+    cursor:pointer; border:none;
+    display:none;
+  }
+  .thumb.has-image .x{ display:block; }
+
+  .btn-row{ display:flex; gap:10px; margin-top:22px; flex-wrap:wrap; }
+  .btn{
+    border:none; border-radius:8px;
+    padding:11px 16px;
+    font-family:"Work Sans", sans-serif;
+    font-size:14px; font-weight:600;
+    cursor:pointer;
+    transition:transform .1s ease, filter .15s ease;
+  }
+  .btn:active{ transform:translateY(1px); }
+  .btn-primary{ background:var(--gold); color:#1a1408; flex:1; }
+  .btn-primary:hover{ filter:brightness(1.08); }
+  .btn-ghost{ background:transparent; border:1px solid var(--line); color:var(--ink-dim); }
+  .btn-ghost:hover{ color:var(--ink); border-color:var(--gold); }
+
+  .stage{
+    display:flex; flex-direction:column; align-items:center; gap:18px;
+  }
+  .paper-wrap{
+    width:100%;
+    border-radius:6px;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.55), 0 2px 0 rgba(255,255,255,0.03) inset;
+    overflow:hidden;
+    background:#000;
+  }
+  .paper-wrap canvas{ display:block; width:100%; height:auto; }
+
+  .stage .actions{
+    width:100%;
+    display:flex; justify-content:center; gap:10px; flex-wrap:wrap;
+  }
+
+  ::selection{ background:rgba(201,162,39,.35); }
+
+  @media (prefers-reduced-motion: no-preference){
+    .btn{ transition:transform .1s ease, filter .15s ease; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="top">
+    <p class="eyebrow">Rancang &amp; unduh dalam hitungan detik</p>
+    <h1>Pembuat Sertifikat</h1>
+    <p>Isi data di panel kiri, pratinjau langsung diperbarui di sebelah kanan. Tambahkan logo dan tanda tangan, pilih tema warna, lalu unduh sertifikat sebagai gambar PNG resolusi tinggi.</p>
+  </header>
+
+  <div class="layout">
+    <!-- FORM PANEL -->
+    <form class="panel" id="form" autocomplete="off">
+
+      <div class="section-title">Isi Sertifikat</div>
+
+      <div class="field">
+        <label for="fNamaSertifikat">Nama Sertifikat</label>
+        <input type="text" id="fNamaSertifikat" value="Sertifikat Penghargaan" maxlength="60" />
+      </div>
+
+      <div class="field">
+        <label for="fDiberikan">Diberikan Kepada</label>
+        <input type="text" id="fDiberikan" value="Diberikan kepada" maxlength="40" />
+      </div>
+
+      <div class="field">
+        <label for="fNamaPenerima">Nama Penerima</label>
+        <input type="text" id="fNamaPenerima" placeholder="Nama lengkap penerima" maxlength="60" />
+      </div>
+
+      <div class="field">
+        <label for="fKeterangan">Keterangan Penghargaan</label>
+        <textarea id="fKeterangan" maxlength="260" placeholder="Atas dedikasi dan kontribusi selama...">Atas dedikasi, kinerja, dan kontribusi yang luar biasa selama kegiatan berlangsung dengan penuh tanggung jawab.</textarea>
+        <div class="hint">Boleh lebih dari satu baris.</div>
+      </div>
+
+      <div class="section-title">Tanda Tangan &amp; Logo</div>
+
+      <div class="field">
+        <label>Logo Pemberi Penghargaan</label>
+        <div class="upload-row">
+          <div class="thumb empty" id="logoThumb"><button type="button" class="x" id="logoRemove">✕</button></div>
+          <label class="upload-btn">
+            <span id="logoBtnLabel">Unggah gambar logo</span>
+            <input type="file" id="fLogo" accept="image/*" />
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="fNamaKetua">Nama Ketua</label>
+        <input type="text" id="fNamaKetua" placeholder="Nama lengkap ketua" maxlength="60" />
+      </div>
+
+      <div class="field">
+        <label>Tanda Tangan Ketua</label>
+        <div class="upload-row">
+          <div class="thumb empty" id="ttdThumb"><button type="button" class="x" id="ttdRemove">✕</button></div>
+          <label class="upload-btn">
+            <span id="ttdBtnLabel">Unggah gambar tanda tangan</span>
+            <input type="file" id="fTtd" accept="image/*" />
+          </label>
+        </div>
+        <div class="hint">Gunakan gambar dengan latar transparan (PNG) untuk hasil terbaik.</div>
+      </div>
+
+      <div class="section-title">Watermark (Opsional)</div>
+
+      <div class="field">
+        <label>Gambar Watermark</label>
+        <div class="upload-row">
+          <div class="thumb empty" id="wmThumb"><button type="button" class="x" id="wmRemove">✕</button></div>
+          <label class="upload-btn">
+            <span id="wmBtnLabel">Unggah gambar watermark</span>
+            <input type="file" id="fWatermark" accept="image/*" />
+          </label>
+        </div>
+        <div class="hint">Tampil samar di tengah sertifikat, di belakang teks. Cocok untuk logo instansi atau tulisan "ASLI".</div>
+      </div>
+
+      <div class="field">
+        <label for="fWmOpacity">Opasitas Watermark</label>
+        <input type="range" id="fWmOpacity" min="4" max="35" value="12" style="width:100%" />
+      </div>
+
+      <div class="section-title">Motif Latar Belakang</div>
+
+      <div class="field">
+        <label for="fGuillocheOpacity">Opasitas Motif Lingkaran (Guilloché)</label>
+        <input type="range" id="fGuillocheOpacity" min="0" max="20" value="5" style="width:100%" />
+        <div class="hint">Atur kepekatan pola garis melingkar samar di tengah sertifikat. Geser ke 0 untuk menghilangkannya sepenuhnya.</div>
+      </div>
+
+      <div class="section-title">Bingkai Sertifikat (Opsional)</div>
+
+      <div class="field">
+        <label>Gambar Bingkai</label>
+        <div class="upload-row">
+          <div class="thumb empty" id="bingkaiThumb"><button type="button" class="x" id="bingkaiRemove">✕</button></div>
+          <label class="upload-btn">
+            <span id="bingkaiBtnLabel">Unggah gambar bingkai</span>
+            <input type="file" id="fBingkai" accept="image/*" />
+          </label>
+        </div>
+        <div class="hint">Menggantikan bingkai bawaan. Gunakan gambar dengan bagian tengah transparan (PNG) dan rasio landscape sekitar 1.4:1 agar pas.</div>
+      </div>
+
+      <div class="section-title">Tema Warna</div>
+      <div class="theme-row" id="themeRow">
+        <label class="theme-pill active" data-theme="navy">
+          <input type="radio" name="theme" value="navy" checked />
+          <span class="swatch" style="background:#16305C"></span> Navy Emas
+        </label>
+        <label class="theme-pill" data-theme="maroon">
+          <input type="radio" name="theme" value="maroon" />
+          <span class="swatch" style="background:#7A1E2B"></span> Maroon Klasik
+        </label>
+        <label class="theme-pill" data-theme="emerald">
+          <input type="radio" name="theme" value="emerald" />
+          <span class="swatch" style="background:#145A43"></span> Zamrud Elegan
+        </label>
+        <label class="theme-pill" data-theme="sapphire">
+          <input type="radio" name="theme" value="sapphire" />
+          <span class="swatch" style="background:#1E4C8A"></span> Biru Safir
+        </label>
+        <label class="theme-pill" data-theme="vintage">
+          <input type="radio" name="theme" value="vintage" />
+          <span class="swatch" style="background:#6B4226"></span> Cokelat Vintage
+        </label>
+        <label class="theme-pill" data-theme="purple">
+          <input type="radio" name="theme" value="purple" />
+          <span class="swatch" style="background:#4B2E6B"></span> Ungu Elegan
+        </label>
+        <label class="theme-pill" data-theme="charcoal">
+          <input type="radio" name="theme" value="charcoal" />
+          <span class="swatch" style="background:#262626"></span> Hitam Elegan
+        </label>
+        <label class="theme-pill" data-theme="terracotta">
+          <input type="radio" name="theme" value="terracotta" />
+          <span class="swatch" style="background:#8C3B2E"></span> Terakota Senja
+        </label>
+        <label class="theme-pill" data-theme="custom">
+          <input type="radio" name="theme" value="custom" />
+          <span class="swatch" style="background:conic-gradient(from 0deg,#16305C,#C9A227,#7A1E2B,#145A43,#16305C)"></span> Kustom
+        </label>
+      </div>
+
+      <div class="field" id="customColors" style="display:none; margin-top:14px">
+        <div class="hint" style="margin-top:0;margin-bottom:10px">Atur sendiri kombinasi warna sertifikat.</div>
+        <div style="display:flex; gap:14px; flex-wrap:wrap">
+          <div>
+            <label for="cInk" style="display:block;font-size:12px;margin-bottom:5px">Warna Utama (teks &amp; bingkai)</label>
+            <input type="color" id="cInk" value="#16305C" style="width:52px;height:36px;border:none;border-radius:6px;background:none;cursor:pointer">
+          </div>
+          <div>
+            <label for="cAccent" style="display:block;font-size:12px;margin-bottom:5px">Warna Aksen (garis &amp; ornamen)</label>
+            <input type="color" id="cAccent" value="#C9A227" style="width:52px;height:36px;border:none;border-radius:6px;background:none;cursor:pointer">
+          </div>
+          <div>
+            <label for="cPaper" style="display:block;font-size:12px;margin-bottom:5px">Warna Kertas</label>
+            <input type="color" id="cPaper" value="#FBF6EA" style="width:52px;height:36px;border:none;border-radius:6px;background:none;cursor:pointer">
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button type="button" class="btn btn-ghost" id="btnSample">Isi contoh</button>
+        <button type="button" class="btn btn-ghost" id="btnReset">Bersihkan</button>
+      </div>
+
+      <div class="section-title">Cetak Massal (Dataset Nama)</div>
+      <div class="hint" style="margin:-6px 0 12px">Buat ratusan sertifikat sekaligus. Setiap baris = satu nama penerima; semua kolom lain (judul, keterangan, logo, tanda tangan, bingkai, tema) tetap sama untuk seluruh sertifikat.</div>
+
+      <div class="bulk-box">
+        <textarea id="fDataset" placeholder="Satu nama per baris, contoh:&#10;Budi Santoso Wijaya&#10;Siti Aminah&#10;Rahmat Hidayat"></textarea>
+        <div class="bulk-meta"><span><strong id="datasetCount">0</strong> nama terdeteksi</span></div>
+        <div class="bulk-actions">
+          <button type="button" class="btn btn-ghost" id="btnDatasetSample">Isi contoh data</button>
+          <label class="btn-ghost">
+            Impor dari file (.txt/.csv)
+            <input type="file" id="fDatasetFile" accept=".txt,.csv" />
+          </label>
+          <button type="button" class="btn btn-ghost" id="btnDatasetClear">Kosongkan</button>
+        </div>
+        <button type="button" class="btn btn-primary" id="btnBulkGenerate" style="width:100%">Buat &amp; Unduh Semua (ZIP)</button>
+        <div class="progress-wrap" id="progressWrap">
+          <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+          <div class="progress-label"><span id="progressText">Memproses…</span><span id="progressPct">0%</span></div>
+        </div>
+      </div>
+    </form>
+
+    <!-- PREVIEW STAGE -->
+    <div class="stage">
+      <div class="paper-wrap">
+        <canvas id="cert" width="1754" height="1240"></canvas>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="btnDownload" style="max-width:280px">Unduh Sertifikat (PNG)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('cert');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  function hexToRgb(hex){
+    hex = String(hex).replace('#','');
+    if(hex.length===3) hex = hex.split('').map(c=>c+c).join('');
+    const num = parseInt(hex,16);
+    return { r:(num>>16)&255, g:(num>>8)&255, b:num&255 };
+  }
+  function rgbToHex(r,g,b){
+    return '#' + [r,g,b].map(x=>Math.max(0,Math.min(255,Math.round(x))).toString(16).padStart(2,'0')).join('');
+  }
+  function lighten(hex, amt){
+    const {r,g,b} = hexToRgb(hex);
+    return rgbToHex(r+(255-r)*amt, g+(255-g)*amt, b+(255-b)*amt);
+  }
+  function relLuminance(hex){
+    const {r,g,b} = hexToRgb(hex);
+    const s = [r,g,b].map(v=>{ v/=255; return v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4); });
+    return 0.2126*s[0] + 0.7152*s[1] + 0.0722*s[2];
+  }
+
+  const THEMES = {
+    navy:       { ink:'#16305C', sub:'#54606f', accent:'#C9A227', paper:'#FBF6EA' },
+    maroon:     { ink:'#7A1E2B', sub:'#6b5654', accent:'#C9A227', paper:'#FBF6EA' },
+    emerald:    { ink:'#145A43', sub:'#4f665e', accent:'#C9A227', paper:'#FBF6EA' },
+    sapphire:   { ink:'#1E4C8A', sub:'#51637c', accent:'#C9A227', paper:'#FBF6EA' },
+    vintage:    { ink:'#6B4226', sub:'#7a695f', accent:'#C9A227', paper:'#FBF6EA' },
+    purple:     { ink:'#4B2E6B', sub:'#69607a', accent:'#C9A227', paper:'#FBF6EA' },
+    charcoal:   { ink:'#262626', sub:'#5c5c5c', accent:'#C9A227', paper:'#FBF6EA' },
+    terracotta: { ink:'#8C3B2E', sub:'#7d5d55', accent:'#C9A227', paper:'#FBF6EA' },
+  };
+  let currentTheme = 'navy';
+
+  const colorInkEl = document.getElementById('cInk');
+  const colorAccentEl = document.getElementById('cAccent');
+  const colorPaperEl = document.getElementById('cPaper');
+  const customColorsPanel = document.getElementById('customColors');
+
+  function getTheme(key){
+    if(key === 'custom'){
+      const ink = colorInkEl.value;
+      const paper = colorPaperEl.value;
+      const paperLum = relLuminance(paper);
+      const sub = paperLum < 0.4 ? lighten(ink, 0.7) : lighten(ink, 0.45);
+      const body = paperLum < 0.4 ? '#EDEAE0' : '#3a3a38';
+      return { ink, sub, accent: colorAccentEl.value, paper, body };
+    }
+    const t = THEMES[key] || THEMES.navy;
+    return Object.assign({ body:'#3a3a38' }, t);
+  }
+
+  const els = {
+    namaSertifikat: document.getElementById('fNamaSertifikat'),
+    diberikan: document.getElementById('fDiberikan'),
+    namaPenerima: document.getElementById('fNamaPenerima'),
+    keterangan: document.getElementById('fKeterangan'),
+    namaKetua: document.getElementById('fNamaKetua'),
+    logo: document.getElementById('fLogo'),
+    ttd: document.getElementById('fTtd'),
+  };
+
+  let logoImg = null;
+  let ttdImg = null;
+  let wmImg = null;
+  let frameImg = null;
+  const wmOpacityEl = document.getElementById('fWmOpacity');
+  const guillocheOpacityEl = document.getElementById('fGuillocheOpacity');
+
+  // ---------- helpers ----------
+  function wrapParagraph(ctx, text, maxWidth){
+    const paragraphs = String(text || '').split('\n');
+    let lines = [];
+    for(const para of paragraphs){
+      const words = para.split(/\s+/).filter(Boolean);
+      let current = '';
+      for(const word of words){
+        const test = current ? current + ' ' + word : word;
+        if(ctx.measureText(test).width > maxWidth && current){
+          lines.push(current);
+          current = word;
+        } else {
+          current = test;
+        }
+      }
+      if(current || lines.length===0) lines.push(current);
+    }
+    return lines;
+  }
+
+  function drawGuilloche(ctx, cx, cy, R, color, opacity){
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.globalAlpha = opacity;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    const layers = 26;
+    for(let i=0;i<layers;i++){
+      const rr = R * (0.35 + (i/layers)*0.65);
+      const d = R * 0.12 * Math.sin(i*0.7);
+      const k = 5 + (i % 4);
+      ctx.beginPath();
+      for(let t=0; t<=Math.PI*2*k; t+=0.03){
+        const x = (rr-d)*Math.cos(t) + d*Math.cos(((rr-d)/(d||1))*0.0001 + t*(k/10));
+        const y = (rr-d)*Math.sin(t) + d*Math.sin(((rr-d)/(d||1))*0.0001 + t*(k/10));
+        if(t===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawCorner(ctx, x, y, size, color, angleDeg){
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angleDeg * Math.PI/180);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.bezierCurveTo(size*0.3, size*0.05, size*0.55, size*0.25, size*0.65, size*0.65);
+    ctx.stroke();
+    for(const t of [0.25,0.45,0.62]){
+      const px = 0.3*size*t*2.2;
+      const py = 0.05*size + t*t*size*0.5;
+      ctx.beginPath();
+      ctx.ellipse(px, py, size*0.07, size*0.03, -0.6, 0, Math.PI*2);
+      ctx.globalAlpha = 0.85;
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.beginPath();
+    ctx.arc(size*0.68, size*0.68, size*0.025, 0, Math.PI*2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawFrame(ctx, W, H, color){
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(36, 36, W-72, H-72);
+    ctx.lineWidth = 1;
+    ctx.strokeRect(52, 52, W-104, H-104);
+  }
+
+  function roundedRectPath(ctx, x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.lineTo(x+w-r, y);
+    ctx.arcTo(x+w, y, x+w, y+r, r);
+    ctx.lineTo(x+w, y+h-r);
+    ctx.arcTo(x+w, y+h, x+w-r, y+h, r);
+    ctx.lineTo(x+r, y+h);
+    ctx.arcTo(x, y+h, x, y+h-r, r);
+    ctx.lineTo(x, y+r);
+    ctx.arcTo(x, y, x+r, y, r);
+    ctx.closePath();
+  }
+
+  function drawPlaceholderEmblem(ctx, cx, cy, box, color){
+    ctx.save();
+    ctx.translate(cx, cy);
+    const half = box/2;
+    roundedRectPath(ctx, -half, -half, box, box, 14);
+    ctx.fillStyle = 'rgba(201,162,39,0.07)';
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    const r = box*0.28;
+    ctx.beginPath();
+    for(let i=0;i<5;i++){
+      const a1 = (Math.PI*2*i)/5 - Math.PI/2;
+      const a2 = a1 + Math.PI/5;
+      const x1=Math.cos(a1)*r, y1=Math.sin(a1)*r;
+      const x2=Math.cos(a2)*r*0.42, y2=Math.sin(a2)*r*0.42;
+      if(i===0) ctx.moveTo(x1,y1); else ctx.lineTo(x1,y1);
+      ctx.lineTo(x2,y2);
+    }
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawLogoImage(ctx, img, cx, cy, box, color){
+    const half = box/2;
+    roundedRectPath(ctx, cx-half, cy-half, box, box, 14);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    const pad = box*0.12;
+    const availW = box - pad*2, availH = box - pad*2;
+    const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+    const scale = Math.min(availW/iw, availH/ih);
+    const dw = iw*scale, dh = ih*scale;
+    ctx.save();
+    roundedRectPath(ctx, cx-half, cy-half, box, box, 14);
+    ctx.clip();
+    ctx.drawImage(img, cx-dw/2, cy-dh/2, dw, dh);
+    ctx.restore();
+  }
+
+  function drawSwash(ctx, cx, y, width, color){
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(cx-width/2, y);
+    ctx.quadraticCurveTo(cx, y+14, cx+width/2, y);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawDivider(ctx, cx, cy, color){
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(cx-130, cy); ctx.lineTo(cx-18, cy);
+    ctx.moveTo(cx+18, cy); ctx.lineTo(cx+130, cy);
+    ctx.stroke();
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(Math.PI/4);
+    ctx.strokeRect(-7,-7,14,14);
+    ctx.restore();
+    ctx.restore();
+  }
+
+  function drawSignatureImage(img, cx, baseline){
+    const maxW = 260, maxH = 108;
+    const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+    const scale = Math.min(maxW/iw, maxH/ih);
+    const dw = iw*scale, dh = ih*scale;
+    ctx.drawImage(img, cx-dw/2, baseline-dh-6, dw, dh);
+  }
+
+  function drawWatermark(ctx, img, W, H, opacityPct){
+    const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+    const maxSize = Math.min(W, H) * 0.62;
+    const scale = Math.min(maxSize/iw, maxSize/ih);
+    const dw = iw*scale, dh = ih*scale;
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, Math.min(1, opacityPct/100));
+    try { ctx.filter = 'grayscale(1) contrast(0.9)'; } catch(e){}
+    ctx.drawImage(img, W/2 - dw/2, H/2 - dh/2, dw, dh);
+    ctx.restore();
+  }
+
+  // ---------- main render ----------
+  function render(){
+    const theme = getTheme(currentTheme);
+
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = theme.paper || '#FBF6EA';
+    ctx.fillRect(0,0,W,H);
+
+    if(wmImg){
+      drawWatermark(ctx, wmImg, W, H, Number(wmOpacityEl.value));
+    }
+
+    drawGuilloche(ctx, W/2, H*0.54, Math.min(W,H)*0.36, theme.ink, Number(guillocheOpacityEl.value)/100);
+
+    if(frameImg){
+      ctx.drawImage(frameImg, 0, 0, W, H);
+    } else {
+      drawFrame(ctx, W, H, theme.accent);
+      const cs = Math.min(W,H)*0.17;
+      drawCorner(ctx, 60, 60, cs, theme.accent, 0);
+      drawCorner(ctx, W-60, 60, cs, theme.accent, 90);
+      drawCorner(ctx, W-60, H-60, cs, theme.accent, 180);
+      drawCorner(ctx, 60, H-60, cs, theme.accent, 270);
+    }
+
+    const emblemY = H*0.155, emblemBox = 150;
+    if(logoImg){
+      drawLogoImage(ctx, logoImg, W/2, emblemY, emblemBox, theme.accent);
+    } else {
+      drawPlaceholderEmblem(ctx, W/2, emblemY, emblemBox, theme.accent);
+    }
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = theme.ink;
+    ctx.font = '700 62px "Playfair Display", serif';
+    const title = (els.namaSertifikat.value || 'Sertifikat Penghargaan').toUpperCase();
+    ctx.fillText(title, W/2, H*0.30);
+
+    ctx.save();
+    ctx.strokeStyle = theme.accent;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(W/2-90, H*0.315);
+    ctx.lineTo(W/2+90, H*0.315);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.font = 'italic 500 34px "Cormorant Garamond", serif';
+    ctx.fillStyle = theme.sub;
+    ctx.fillText(els.diberikan.value || 'Diberikan kepada', W/2, H*0.375);
+
+    ctx.font = '400 60px "Alex Brush", cursive';
+    ctx.fillStyle = theme.ink;
+    ctx.fillText(els.namaPenerima.value || 'Nama Penerima', W/2, H*0.475);
+    drawSwash(ctx, W/2, H*0.492, 420, theme.accent);
+
+    ctx.font = '500 30px "Cormorant Garamond", serif';
+    ctx.fillStyle = theme.body || '#3a3a38';
+    const lines = wrapParagraph(ctx, els.keterangan.value, W*0.56);
+    let ly = H*0.565;
+    for(const line of lines){ ctx.fillText(line, W/2, ly); ly += 44; }
+
+    drawDivider(ctx, W/2, H*0.72, theme.accent);
+
+    const sigY = H*0.81;
+    if(ttdImg){ drawSignatureImage(ttdImg, W/2, sigY+8); }
+
+    ctx.strokeStyle = theme.ink;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(W/2-140, sigY+10);
+    ctx.lineTo(W/2+140, sigY+10);
+    ctx.stroke();
+
+    ctx.font = '700 28px "Playfair Display", serif';
+    ctx.fillStyle = theme.ink;
+    ctx.fillText(els.namaKetua.value || 'Nama Ketua', W/2, sigY+46);
+    ctx.font = 'italic 400 22px "Cormorant Garamond", serif';
+    ctx.fillStyle = theme.sub;
+    ctx.fillText('Ketua', W/2, sigY+74);
+  }
+
+  // ---------- wiring ----------
+  ['input'].forEach(evt=>{
+    Object.values(els).forEach(el=>{
+      if(el && (el.tagName==='INPUT' && el.type==='text' || el.tagName==='TEXTAREA')){
+        el.addEventListener(evt, render);
+      }
+    });
+  });
+
+  document.getElementById('themeRow').addEventListener('change', function(e){
+    const radio = e.target.closest('input[name="theme"]');
+    if(!radio) return;
+    currentTheme = radio.value;
+    document.querySelectorAll('.theme-pill').forEach(p=>p.classList.remove('active'));
+    radio.closest('.theme-pill').classList.add('active');
+    customColorsPanel.style.display = (currentTheme === 'custom') ? 'block' : 'none';
+    render();
+  });
+
+  [colorInkEl, colorAccentEl, colorPaperEl].forEach(function(el){
+    el.addEventListener('input', function(){
+      if(currentTheme === 'custom') render();
+    });
+  });
+
+  function handleImageUpload(fileInput, thumbEl, btnLabelEl, defaultLabel, onLoaded){
+    fileInput.addEventListener('change', function(){
+      const file = fileInput.files && fileInput.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e){
+        const img = new Image();
+        img.onload = function(){
+          onLoaded(img);
+          thumbEl.style.backgroundImage = 'url(' + e.target.result + ')';
+          thumbEl.classList.remove('empty');
+          thumbEl.classList.add('has-image');
+          btnLabelEl.textContent = file.name.length > 22 ? file.name.slice(0,19)+'…' : file.name;
+          render();
+        };
+        img.onerror = function(){ alert('Gagal memuat gambar. Coba file lain.'); };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  const logoThumb = document.getElementById('logoThumb');
+  const ttdThumb = document.getElementById('ttdThumb');
+  const wmThumb = document.getElementById('wmThumb');
+  const bingkaiThumb = document.getElementById('bingkaiThumb');
+  const logoBtnLabel = document.getElementById('logoBtnLabel');
+  const ttdBtnLabel = document.getElementById('ttdBtnLabel');
+  const wmBtnLabel = document.getElementById('wmBtnLabel');
+  const bingkaiBtnLabel = document.getElementById('bingkaiBtnLabel');
+
+  handleImageUpload(els.logo, logoThumb, logoBtnLabel, 'Unggah gambar logo', img=>{ logoImg = img; });
+  handleImageUpload(els.ttd, ttdThumb, ttdBtnLabel, 'Unggah gambar tanda tangan', img=>{ ttdImg = img; });
+  handleImageUpload(document.getElementById('fWatermark'), wmThumb, wmBtnLabel, 'Unggah gambar watermark', img=>{ wmImg = img; });
+  handleImageUpload(document.getElementById('fBingkai'), bingkaiThumb, bingkaiBtnLabel, 'Unggah gambar bingkai', img=>{ frameImg = img; });
+
+  wmOpacityEl.addEventListener('input', render);
+  guillocheOpacityEl.addEventListener('input', render);
+
+  document.getElementById('logoRemove').addEventListener('click', function(){
+    logoImg = null; els.logo.value = '';
+    logoThumb.style.backgroundImage = '';
+    logoThumb.classList.add('empty'); logoThumb.classList.remove('has-image');
+    logoBtnLabel.textContent = 'Unggah gambar logo';
+    render();
+  });
+  document.getElementById('ttdRemove').addEventListener('click', function(){
+    ttdImg = null; els.ttd.value = '';
+    ttdThumb.style.backgroundImage = '';
+    ttdThumb.classList.add('empty'); ttdThumb.classList.remove('has-image');
+    ttdBtnLabel.textContent = 'Unggah gambar tanda tangan';
+    render();
+  });
+  document.getElementById('wmRemove').addEventListener('click', function(){
+    wmImg = null; document.getElementById('fWatermark').value = '';
+    wmThumb.style.backgroundImage = '';
+    wmThumb.classList.add('empty'); wmThumb.classList.remove('has-image');
+    wmBtnLabel.textContent = 'Unggah gambar watermark';
+    render();
+  });
+  document.getElementById('bingkaiRemove').addEventListener('click', function(){
+    frameImg = null; document.getElementById('fBingkai').value = '';
+    bingkaiThumb.style.backgroundImage = '';
+    bingkaiThumb.classList.add('empty'); bingkaiThumb.classList.remove('has-image');
+    bingkaiBtnLabel.textContent = 'Unggah gambar bingkai';
+    render();
+  });
+
+  document.getElementById('btnSample').addEventListener('click', function(){
+    els.namaSertifikat.value = 'Sertifikat Penghargaan';
+    els.diberikan.value = 'Diberikan kepada';
+    els.namaPenerima.value = 'Budi Santoso Wijaya';
+    els.keterangan.value = 'Atas dedikasi, kinerja, dan kontribusi yang luar biasa dalam mendukung kegiatan administrasi persidangan selama periode magang berlangsung dengan penuh tanggung jawab.';
+    els.namaKetua.value = 'Dr. Ahmad Fauzi, M.Si.';
+    render();
+  });
+
+  document.getElementById('btnReset').addEventListener('click', function(){
+    Object.values(els).forEach(el=>{
+      if(el.tagName==='INPUT' && el.type==='text') el.value='';
+      if(el.tagName==='TEXTAREA') el.value='';
+    });
+    logoImg = null; ttdImg = null; wmImg = null; frameImg = null;
+    els.logo.value=''; els.ttd.value=''; document.getElementById('fWatermark').value=''; document.getElementById('fBingkai').value='';
+    wmOpacityEl.value = 12;
+    guillocheOpacityEl.value = 5;
+    [logoThumb, ttdThumb, wmThumb, bingkaiThumb].forEach(t=>{ t.style.backgroundImage=''; t.classList.add('empty'); t.classList.remove('has-image'); });
+    logoBtnLabel.textContent = 'Unggah gambar logo';
+    ttdBtnLabel.textContent = 'Unggah gambar tanda tangan';
+    wmBtnLabel.textContent = 'Unggah gambar watermark';
+    bingkaiBtnLabel.textContent = 'Unggah gambar bingkai';
+    render();
+  });
+
+  document.getElementById('btnDownload').addEventListener('click', function(){
+    const link = document.createElement('a');
+    const name = (els.namaPenerima.value || 'sertifikat').trim().replace(/\s+/g,'_');
+    link.download = 'Sertifikat_' + name + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+
+  // ---------- bulk generation (dataset) ----------
+  const datasetEl = document.getElementById('fDataset');
+  const datasetCountEl = document.getElementById('datasetCount');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressFill = document.getElementById('progressFill');
+  const progressText = document.getElementById('progressText');
+  const progressPct = document.getElementById('progressPct');
+  const btnBulkGenerate = document.getElementById('btnBulkGenerate');
+
+  function parseNames(raw){
+    return String(raw || '')
+      .split(/\r?\n/)
+      .map(line => line.split(',')[0].trim().replace(/^["']|["']$/g,''))
+      .filter(Boolean);
+  }
+
+  function updateDatasetCount(){
+    datasetCountEl.textContent = parseNames(datasetEl.value).length;
+  }
+  datasetEl.addEventListener('input', updateDatasetCount);
+
+  document.getElementById('btnDatasetSample').addEventListener('click', function(){
+    datasetEl.value = [
+      'Budi Santoso Wijaya','Siti Aminah','Rahmat Hidayat','Dewi Lestari',
+      'Ahmad Fauzan','Putri Ramadhani','Andi Saputra','Nur Fadillah'
+    ].join('\n');
+    updateDatasetCount();
+  });
+
+  document.getElementById('btnDatasetClear').addEventListener('click', function(){
+    datasetEl.value = '';
+    document.getElementById('fDatasetFile').value = '';
+    updateDatasetCount();
+  });
+
+  document.getElementById('fDatasetFile').addEventListener('change', function(e){
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      datasetEl.value = ev.target.result;
+      updateDatasetCount();
+    };
+    reader.readAsText(file);
+  });
+
+  function setFormDisabled(disabled){
+    document.querySelectorAll('#form input, #form textarea, #form button').forEach(el=>{
+      el.disabled = disabled;
+    });
+    btnBulkGenerate.textContent = disabled ? 'Sedang memproses…' : 'Buat & Unduh Semua (ZIP)';
+  }
+
+  async function generateBulkZip(){
+    const names = parseNames(datasetEl.value);
+    if(names.length === 0){
+      alert('Masukkan minimal satu nama pada daftar dataset terlebih dahulu.');
+      return;
+    }
+    if(names.length > 1000){
+      alert('Maksimal 1000 nama dalam satu proses agar browser tetap stabil.');
+      return;
+    }
+    if(typeof JSZip === 'undefined'){
+      alert('Fitur unduh ZIP tidak tersedia saat ini (gagal memuat pustaka JSZip). Periksa koneksi internet Anda dan muat ulang halaman.');
+      return;
+    }
+
+    const originalName = els.namaPenerima.value;
+    setFormDisabled(true);
+    progressWrap.classList.add('active');
+    progressFill.style.width = '0%';
+    progressPct.textContent = '0%';
+
+    const zip = new JSZip();
+
+    for(let i = 0; i < names.length; i++){
+      els.namaPenerima.value = names[i];
+      render();
+      // yield to the browser so the canvas actually paints and UI stays responsive
+      await new Promise(r => requestAnimationFrame(r));
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+      const safeName = names[i].replace(/[\\/:*?"<>|]+/g, '_').slice(0, 60) || ('Penerima_' + (i+1));
+      const fileNum = String(i+1).padStart(String(names.length).length, '0');
+      zip.file(`Sertifikat_${fileNum}_${safeName}.png`, blob);
+
+      const pct = Math.round(((i+1) / names.length) * 90); // reserve last 10% for zipping
+      progressFill.style.width = pct + '%';
+      progressPct.textContent = pct + '%';
+      progressText.textContent = `Membuat sertifikat ${i+1} dari ${names.length}…`;
+    }
+
+    progressText.textContent = 'Menyusun berkas ZIP…';
+    const content = await zip.generateAsync({ type: 'blob' }, function(meta){
+      const pct = 90 + Math.round(meta.percent * 0.1);
+      progressFill.style.width = pct + '%';
+      progressPct.textContent = pct + '%';
+    });
+
+    const url = URL.createObjectURL(content);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Sertifikat_Massal_' + names.length + '.zip';
+    a.click();
+    URL.revokeObjectURL(url);
+
+    els.namaPenerima.value = originalName;
+    render();
+    setFormDisabled(false);
+    progressText.textContent = `Selesai — ${names.length} sertifikat berhasil dibuat.`;
+    progressFill.style.width = '100%';
+    progressPct.textContent = '100%';
+    setTimeout(()=>{ progressWrap.classList.remove('active'); }, 3000);
+  }
+
+  btnBulkGenerate.addEventListener('click', generateBulkZip);
+
+  // ---------- font loading then first render ----------
+  const fontSpecs = [
+    '700 62px "Playfair Display"',
+    'italic 600 34px "Playfair Display"',
+    '500 30px "Cormorant Garamond"',
+    'italic 500 34px "Cormorant Garamond"',
+    '400 60px "Alex Brush"',
+  ];
+  Promise.all(fontSpecs.map(f=>document.fonts.load(f))).then(render).catch(render);
+  document.fonts.ready.then(render);
+  render();
+})();
+</script>
+</body>
+</html>
